@@ -16,6 +16,7 @@ Ce document centralise le suivi de tout le travail réalisé sur le projet. Il s
 - [12 septembre 2026 — Résolution de l’absence d’OTP reçu](#otp-local)
 - [12 septembre 2026 — Accès depuis un autre appareil et activation OTP](#reseau-otp)
 - [12 septembre 2026 — Messagerie avancée, groupes, multi-appareils et notifications iOS](#messagerie-avancee)
+- [12 septembre 2026 — Publication du code sur GitHub](#publication-github)
 
 <a id="regles"></a>
 
@@ -956,3 +957,29 @@ Ajouter la modification, les deux modes de suppression, le transfert, la recherc
 ### Résultat
 
 Toutes les fonctionnalités demandées sont intégrées dans les couches modèle, service, API, WebSocket, hooks, état global et interface. En production, il faudra appliquer les migrations PostgreSQL avant déploiement et conserver Redis comme channel layer pour la diffusion multi-processus et multi-appareils.
+
+---
+
+<a id="publication-github"></a>
+
+## 12 septembre 2026 — Publication du code sur GitHub
+
+### Demande
+
+Publier le projet complet Kozons dans le dépôt GitHub `Coulabraham/kozons`.
+
+### Actions réalisées
+
+- Vérification que le dossier racine n’était pas encore un dépôt Git et que le dépôt distant était vide.
+- Initialisation d’un dépôt Git racine sur la branche `main` et ajout du remote `https://github.com/Coulabraham/kozons.git`.
+- Vérification des règles d’exclusion avant le commit : fichiers `.env` locaux, base SQLite, caches, dépendances `node_modules`, sorties Next.js et service workers générés restent exclus.
+- Création du commit initial `5b4ef7d` (`Initial Kozons chat application`) puis publication réussie sur `origin/main`.
+- Vérification distante : la branche `main` pointe bien vers ce commit.
+
+### Particularité rencontrée
+
+Le dossier `frontend/` contenait son propre dépôt Git local sans remote. Afin de publier un dépôt unique incluant backend et frontend, ses métadonnées Git ont été déplacées temporairement hors du projet pendant l’indexation, puis restaurées immédiatement après le push. Aucun fichier source, historique local frontend, secret ou donnée d’application n’a été supprimé.
+
+### Résultat
+
+Le code source est disponible sur `https://github.com/Coulabraham/kozons` dans la branche `main`. Les fichiers privés et générés restent uniquement sur le poste local conformément à `.gitignore`.
