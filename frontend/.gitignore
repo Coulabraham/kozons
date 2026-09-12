@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+.qa/
+tsconfig.tsbuildinfo
+.env
+.env.local
+.env.production
+public/sw.js
+public/workbox-*.js
+public/fallback-*.js

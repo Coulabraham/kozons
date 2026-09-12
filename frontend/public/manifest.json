@@ -1,0 +1,32 @@
+{
+  "name": "Kozons — Messagerie",
+  "short_name": "Kozons",
+  "description": "Discutez en privé ou en groupe, partagez photos, vidéos et notes vocales.",
+  "id": "/",
+  "start_url": "/auth/login",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F1F6F9",
+  "theme_color": "#229ED9",
+  "lang": "fr",
+  "categories": ["social", "communication"],
+  "icons": [
+    {
+      "src": "/branding/kozons-app-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/branding/kozons-app-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Discussions", "short_name": "Discussions", "url": "/chat" },
+    { "name": "Contacts", "short_name": "Contacts", "url": "/contacts" }
+  ]
+}

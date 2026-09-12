@@ -1,0 +1,135 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: kozons
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER requis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requis}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD requis}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - redis_data:/data
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER requis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD requis}
+      AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME:-kozons-dev}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER requis}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD requis}
+      AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME:-kozons-dev}
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do sleep 2; done;
+      mc mb --ignore-existing "local/$$AWS_STORAGE_BUCKET_NAME";
+      "
+
+  clamav:
+    image: clamav/clamav:stable
+    volumes:
+      - clamav_data:/var/lib/clamav
+
+  http:
+    build: .
+    command: gunicorn kozons.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    environment: &backend-environment
+      DJANGO_SETTINGS_MODULE: kozons.settings.dev
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY requis}
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY requis}
+      RATE_LIMIT_SECRET: ${RATE_LIMIT_SECRET:?RATE_LIMIT_SECRET requis}
+      MEDIA_PATH_HMAC_SECRET: ${MEDIA_PATH_HMAC_SECRET:?MEDIA_PATH_HMAC_SECRET requis}
+      KOZONS_ENVIRONMENT: dev
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/kozons
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CACHE_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/2
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/3
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      AWS_S3_ENDPOINT_URL: http://minio:9000
+      AWS_STORAGE_BUCKET_NAME: kozons-dev
+      AWS_S3_ADDRESSING_STYLE: path
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      WEBSOCKET_ALLOWED_ORIGINS: ${WEBSOCKET_ALLOWED_ORIGINS:-http://localhost:3000}
+      CLAMAV_ENABLED: "true"
+      CLAMAV_HOST: clamav
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+
+  realtime:
+    build: .
+    command: daphne -b 0.0.0.0 -p 8001 kozons.asgi:application
+    environment: *backend-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+
+  worker:
+    build: .
+    command: celery -A kozons worker --loglevel=INFO --concurrency=2
+    environment: *backend-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_started
+
+  beat:
+    build: .
+    command: celery -A kozons beat --loglevel=INFO
+    environment: *backend-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  clamav_data:

@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+db.sqlite3
+kozons-local.sqlite3
+
+# Frontend Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/tsconfig.tsbuildinfo
+frontend/public/sw.js
+frontend/public/workbox-*.js
+frontend/public/fallback-*.js
+frontend/.qa/

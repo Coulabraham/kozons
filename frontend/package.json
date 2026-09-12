@@ -1,0 +1,31 @@
+{
+  "name": "kozons-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node scripts/serve-static.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:responsive": "node scripts/responsive-smoke.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.87.1",
+    "date-fns": "^4.1.0",
+    "next": "15.5.2",
+    "next-pwa": "^5.6.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "socket.io-client": "^4.8.1",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.2"
+  }
+}
